@@ -142,9 +142,9 @@ module.exports = {
   update_profile_user: (userId, data) => {
     return new Promise(async (resolve, reject) => {
       try {
-        const user = await User.find({ _id: userId });
-        if (user) {
-          await User.findByIdAndUpdate(
+        const _user = await User.find({ _id: userId });
+        if (_user) {
+          const user = await User.findByIdAndUpdate(
             { _id: userId },
             {
               profile: {
@@ -156,19 +156,52 @@ module.exports = {
             },
             { new: true }
           );
+          resolve({
+            code: 200,
+            success: true,
+            user,
+            message: "update user success !",
+          });
         }
-        resolve({
-          code: 200,
-          success: true,
-          message: "update user success !",
-        });
       } catch (error) {
         reject({
           code: 200,
           success: false,
-          post: error.message,
+          data: error.message,
         });
       }
     });
   },
+  userStat:()=>{
+    const date = new Date();
+    const currentMonth = new Date(date.setMonth(date.getMonth() + 1));
+    return new Promise(async(resolve,reject)=>{
+        try {
+            const user = await User.aggregate([
+                {
+                    $match:{
+                        createdAt: { $lte: currentMonth }
+                    }
+                },
+                {
+                    $project:{
+                        month:{$month:"$createdAt"}
+                    }
+                }, 
+                {
+                    $group:{
+                        _id:"$month", 
+                        quantity:{$count:{}},
+                    }
+                },
+                {
+                    $sort:{_id:1}
+                }
+            ])
+            resolve(user); 
+        } catch (error) {
+            reject(error)
+        }
+    })
+}
 };

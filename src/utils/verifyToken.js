@@ -12,7 +12,6 @@ module.exports = {
       }
 
       const token = req.headers.token.split(" ")[1];
-      
       if (!token) {
         res.status(200).json({
           code: 401,

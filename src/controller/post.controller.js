@@ -19,7 +19,7 @@ module.exports = {
   },
   get_list: async (req, res, next) => {
     try {
-      const post = await postService.get_list({});
+      const post = await postService.get_list();
       if (post.success) {
         res.status(200).json(post);
       }

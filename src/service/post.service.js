@@ -28,7 +28,7 @@ module.exports = {
     return new Promise(async (resolve, reject) => {
       try {
         const comments = await Comment.find({}).sort({
-          createdAt:-1
+          createdAt: 1,
         });
         const posts = await Post.find({}).sort({ time: -1 });
         const users = await User.find({});
@@ -60,31 +60,51 @@ module.exports = {
             );
           });
 
-          if (commentPost) {
-            const mixComment = commentPost.map((element) => {
-              const ownUser = users.find(
-                (item) =>
-                  JSON.stringify(item._id).slice(
-                    1,
-                    JSON.stringify(item._id).length - 1
-                  ) ===
+          commentPost.length > 0 &&
+            commentPost.forEach((element) => {
+              const ownUser = users.find((item) => {
+                return (
                   JSON.stringify(element.userId).slice(
                     1,
                     JSON.stringify(element.userId).length - 1
+                  ) ===
+                  JSON.stringify(item._id).slice(
+                    1,
+                    JSON.stringify(item._id).length - 1
                   )
-              );
-              if (ownUser) {
-                const { _id, username, avatar } = ownUser._doc;
-                element._doc.ownUser = { _id, username, avatar };
-              }
-              return element;
+                );
+              });
+
+              const { password, profile, ...rest } = ownUser._doc;
+
+              element._doc.ownUser = rest;
             });
-            newObj.comment = mixComment.slice(0,2);
-          }
+
+          const newCommentPost = {};
+          commentPost.forEach((element) => {
+            element._doc.child = [];
+            newCommentPost[
+              JSON.stringify(element._id).slice(
+                1,
+                JSON.stringify(element._id).length - 1
+              )
+            ] = element;
+          });
+
+          const commentAndChild = [];
+
+          commentPost.forEach((element) => {
+            if (!newCommentPost[element.parentId]) {
+              commentAndChild.push(element);
+            } else {
+              newCommentPost[element.parentId]._doc.child.push(element);
+            }
+          });
           if (userPost) {
             const { password, isAdmin, ...rest } = userPost._doc;
             newObj.post = item;
             newObj.user = rest;
+            newObj.comment = commentAndChild;
           }
           return newObj;
         });
@@ -146,26 +166,26 @@ module.exports = {
       }
     });
   },
-  delete_post: (postId,userId) => {
+  delete_post: (postId, userId) => {
     return new Promise(async (resolve, reject) => {
       try {
         const postExist = await Post.findOne({
-            _id:postId, 
-            userId
-        })
-        if(!postExist){
+          _id: postId,
+          userId,
+        });
+        if (!postExist) {
           resolve({
-            success:false, 
-            message:"you are don't allow to do that !"
-          })
-          return; 
+            success: false,
+            message: "you are don't allow to do that !",
+          });
+          return;
         }
-        const post = await Post.findByIdAndDelete({_id:postId}); 
+        const post = await Post.findByIdAndDelete({ _id: postId });
         resolve({
           code: 200,
           success: true,
-          postId:post._id,
-          message:"delete post success !"
+          postId: post._id,
+          message: "delete post success !",
         });
       } catch (error) {
         reject({

@@ -22,9 +22,6 @@ module.exports = {
     },
 
     getCommentByTwoUser:({from,to})=>{
-
-    
-
         return new Promise(async(resolve,reject)=>{
             try {
                 const msg  = await Message.find({$or:[
